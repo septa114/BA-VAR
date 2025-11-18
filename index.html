@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Berita Acara - Personil TTD & Bagikan PDF</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        /* CSS Umum */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            width: 210mm; /* Lebar A4 */
+            min-height: 297mm; /* Tinggi A4 */
+            margin: 0 auto;
+            padding: 30px;
+            background-color: white;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1.title {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            font-size: 1.5em;
+        }
+
+        /* Input Data */
+        .data-input {
+            margin-bottom: 15px;
+            display: flex;
+        }
+        .data-input label {
+            width: 150px;
+            font-weight: bold;
+        }
+        .data-input input[type="text"] {
+            flex-grow: 1;
+            border: none;
+            border-bottom: 1px solid #000;
+            padding: 2px 5px;
+            outline: none;
+        }
+
+        /* Keterangan */
+        .keterangan-section {
+            margin-top: 20px;
+            line-height: 1.5;
+        }
+        .keterangan-section input[type="text"] {
+            border: none;
+            border-bottom: 1px solid #000;
+            padding: 2px 5px;
+            width: 100px;
+            display: inline-block;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            resize: vertical;
+            margin-top: 5px;
+        }
+
+        /* Tanda Tangan Layout */
+        .tanda-tangan {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+            text-align: center;
+        }
+        .ttd-box {
+            width: 20%;
+            display: inline-block;
+        }
+        .ttd-box .tempat {
+            text-align: left;
+        }
+        .ttd-controls {
+            margin-top: 5px;
+        }
+        .ttd-controls button {
+            padding: 5px 10px;
+            margin: 0 2px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+
+        /* TTD Digital Area (Hanya untuk Personil Toko) */
+        .ttd-area {
+            height: 80px;
+            border: 1px solid #000;
+            margin: 5px 0;
+            cursor: crosshair;
+            background-color: #eee;
+        }
+        .ttd-box img.ttd-image {
+            display: none; 
+            width: 100%;
+            height: 80px;
+            border: 1px solid #000;
+            object-fit: contain; 
+        }
+
+        /* TTD Manual Area (Untuk Selain Personil Toko) */
+        .ttd-line {
+            height: 80px;
+            border-bottom: 1px solid #000;
+            margin: 5px 0;
+        }
+
+        .ttd-box p {
+            margin: 5px 0 0;
+            font-weight: bold;
+        }
+
+        /* Tombol Aksi */
+        .actions {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+        .actions button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #28a745; /* Hijau untuk Share */
+            color: white;
+        }
+        
+        /* Credit Text */
+        .credit-text {
+            text-align: right;
+            margin-top: 50px;
+            font-size: 0.7em;
+            color: #666;
+        }
+        
+        /* Sembunyikan tombol saat konversi PDF */
+        .hide-on-export {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="actions">
+        <button onclick="sharePDF()">Bagikan Langsung PDF</button>
+    </div>
+
+    <div class="container">
+        <h1 class="title">BERITA ACARA</h1>
+
+        <div class="data-input">
+            <label for="kode_toko">KODE TOKO</label>
+            <input type="text" id="kode_toko">
+        </div>
+        <div class="data-input">
+            <label for="nama_personil">NAMA PERSONIL</label>
+            <input type="text" id="nama_personil">
+        </div>
+        <div class="data-input">
+            <label for="nik">NIK</label>
+            <input type="text" id="nik">
+        </div>
+        <div class="data-input">
+            <label for="jabatan">JABATAN</label>
+            <input type="text" id="jabatan">
+        </div>
+
+        <hr>
+
+        <div class="keterangan-section">
+            <p>
+                Menerangkan telah terjadi **(Variance Plus / Lebih Setor fisik)** tanggal 
+                <input type="text" placeholder="DD-MM-YYYY" id="tanggal_kejadian" style="width: 100px;"> </p>
+            <p>
+                Dengan kronologi sbb :
+            </p>
+            <textarea placeholder="Tuliskan kronologi kejadian di sini..." id="kronologi"></textarea>
+        </div>
+
+        <div class="penutup-section">
+            <p>
+                Demikian berita acara ini saya buat dengan sebenar benarnya, Terima kasih
+            </p>
+        </div>
+
+        <div class="tanda-tangan">
+            <div class="ttd-box" style="margin-left: auto; text-align: right; width: 25%;">
+                <div class="tempat">Sidoarjo, <input type="text" id="tempat_dibuat" style="width: 80px; border: none; border-bottom: 1px solid #000; display: inline-block;"></div>
+                <p>Dibuat</p>
+                <canvas id="signature-personil" class="ttd-area"></canvas>
+                <img class="ttd-image" alt="Tanda Tangan Personil Toko">
+                <div class="ttd-controls">
+                    <button onclick="clearCanvas('signature-personil')">Hapus TTD</button>
+                </div>
+                <p>(Personil toko)</p>
+            </div>
+        </div>
+
+        <div class="tanda-tangan" style="margin-top: 50px;">
+            <div class="ttd-box">
+                <p>Disetujui</p>
+                <div class="ttd-line"></div>
+                <p>(Area Supervisor)</p>
+            </div>
+
+            <div class="ttd-box">
+                <p>Diketahui</p>
+                <div class="ttd-line"></div>
+                <p>(DBM Adm/Opr)</p>
+            </div>
+
+            <div class="ttd-box">
+                <p>Diketahui</p>
+                <div class="ttd-line"></div>
+                <p>(Area Manager)</p>
+            </div>
+
+            <div class="ttd-box">
+                <p>Diketahui</p>
+                <div class="ttd-line"></div>
+                <p>(Office Manager)</p>
+            </div>
+        </div>
+        
+        <div class="credit-text">Credit by kopi hitam</div>
+
+    </div>
+
+    <script>
+        // Hanya satu canvas yang dipantau
+        const canvases = document.querySelectorAll('.ttd-area');
+        const ttdImages = document.querySelectorAll('.ttd-image');
+        const controls = document.querySelectorAll('.ttd-controls');
+
+        // --- FUNGSI TANDA TANGAN ---
+
+        function initSignaturePad(canvas) {
+            const ctx = canvas.getContext('2d');
+            let isDrawing = false;
+            let lastX = 0;
+            let lastY = 0;
+
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            ctx.strokeStyle = '#000000';
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.lineWidth = 3;
+
+            function draw(e) {
+                if (!isDrawing) return;
+                
+                let clientX, clientY;
+                if (e.touches && e.touches.length > 0) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+
+                const rect = canvas.getBoundingClientRect();
+                const currentX = clientX - rect.left;
+                const currentY = clientY - rect.top;
+
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(currentX, currentY);
+                ctx.stroke();
+
+                lastX = currentX;
+                lastY = currentY;
+                e.preventDefault();
+            }
+
+            canvas.addEventListener('mousedown', (e) => {
+                isDrawing = true;
+                const rect = canvas.getBoundingClientRect();
+                lastX = e.clientX - rect.left;
+                lastY = e.clientY - rect.top;
+            });
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', () => isDrawing = false);
+            canvas.addEventListener('mouseout', () => isDrawing = false);
+            canvas.addEventListener('touchstart', (e) => {
+                isDrawing = true;
+                const rect = canvas.getBoundingClientRect();
+                lastX = e.touches[0].clientX - rect.left;
+                lastY = e.touches[0].clientY - rect.top;
+                e.preventDefault();
+            });
+            canvas.addEventListener('touchmove', draw);
+            canvas.addEventListener('touchend', () => isDrawing = false);
+        }
+
+        canvases.forEach(initSignaturePad);
+
+        function clearCanvas(canvasId) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // --- FUNGSI UTILITY KONVERSI DAN RESET ---
+
+        function prepareForExport(state) {
+            // state: 'exporting' atau 'done'
+            canvases.forEach((canvas, index) => {
+                const img = ttdImages[index];
+                if (state === 'exporting') {
+                    // Konversi Canvas ke Image
+                    if (canvas.toDataURL('image/png').length > 1000) { 
+                        img.src = canvas.toDataURL('image/png');
+                        img.style.display = 'block'; 
+                        canvas.style.display = 'none';
+                    }
+                    // Sembunyikan kontrol dan tombol aksi
+                    controls.forEach(el => el.classList.add('hide-on-export'));
+                    document.querySelector('.actions').classList.add('hide-on-export');
+
+                } else if (state === 'done') {
+                    // Kembalikan ke tampilan awal
+                    canvas.style.display = 'block';
+                    img.style.display = 'none';
+                    controls.forEach(el => el.classList.remove('hide-on-export'));
+                    document.querySelector('.actions').classList.remove('hide-on-export');
+                }
+            });
+        }
+        
+        // --- FUNGSI UTAMA BAGIKAN LANGSUNG PDF ---
+
+        async function sharePDF() {
+            prepareForExport('exporting');
+            
+            const element = document.querySelector('.container');
+            
+            // --- MODIFIKASI TANGGAL KE DD-MM-YYYY UNTUK NAMA FILE ---
+            const today = new Date();
+            const dd = String(today.getDate()).padStart(2, '0');
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); 
+            const yyyy = today.getFullYear();
+            const dateStr = `${dd}-${mm}-${yyyy}`; 
+            // ----------------------------------------
+
+            // Ambil nilai dari input Kode Toko
+            const kodeToko = document.getElementById('kode_toko').value;
+            // Membersihkan string kodeToko (mengganti karakter non-alfanumerik dengan '_') 
+            const safeKodeToko = kodeToko ? kodeToko.replace(/[^a-zA-Z0-9]/g, '_') : 'TANPA_KODE'; 
+
+            // Gabungkan dengan format nama file yang diinginkan
+            const filename = `BA_VAR_${safeKodeToko}_${dateStr}.pdf`; 
+
+            // Konfigurasi html2pdf
+            const opt = {
+                margin: [10, 10, 10, 10], 
+                filename: filename,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            try {
+                // Konversi HTML ke Blob PDF
+                const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
+                
+                // Cek dukungan Web Share API
+                if (navigator.canShare && navigator.canShare({ files: [new File([pdfBlob], filename, { type: 'application/pdf' })] })) {
+                    
+                    const file = new File([pdfBlob], filename, { type: 'application/pdf' });
+                    
+                    // Panggil dialog berbagi OS
+                    await navigator.share({
+                        files: [file],
+                        title: 'Berita Acara Sales Variance',
+                        text: 'Terlampir adalah Berita Acara yang telah ditandatangani secara digital.',
+                    });
+                    
+                } else {
+                    // Fallback: Unduh file
+                    alert('Browser tidak mendukung fitur berbagi langsung. File akan diunduh.');
+                    
+                    const url = URL.createObjectURL(pdfBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }
+            } catch (error) {
+                console.error('Proses Ekspor/Berbagi gagal:', error);
+                alert('Gagal membuat atau berbagi PDF.');
+            } finally {
+                // Reset tampilan setelah proses selesai
+                prepareForExport('done');
+            }
+        }
+        
+        // --- FUNGSI BARU: MENGISI TANGGAL DIBUAT OTOMATIS ---
+
+        function setCreationDate() {
+            const dateInput = document.getElementById('tempat_dibuat');
+
+            // Get current date and format as DD-MM-YYYY
+            const today = new Date();
+            const dd = String(today.getDate()).padStart(2, '0');
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); 
+            const yyyy = today.getFullYear();
+            const formattedDate = `${dd}-${mm}-${yyyy}`;
+
+            // Set the value and make it read-only
+            if (dateInput) {
+                dateInput.value = formattedDate;
+                dateInput.readOnly = true;
+            }
+        }
+
+        // Panggil fungsi saat skrip selesai dimuat (atau saat DOMContentLoaded)
+        setCreationDate();
+        
+    </script>
+</body>
+</html>
