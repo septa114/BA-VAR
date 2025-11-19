@@ -41,7 +41,7 @@
             padding-right: 20px;
         }
 
-        /* Input Data (Garis bawah dipertahankan sebagai penanda kolom) */
+        /* Input Data */
         .data-input {
             margin-bottom: 15px;
             display: flex;
@@ -53,7 +53,7 @@
         .data-input input[type="text"] {
             flex-grow: 1;
             border: none;
-            border-bottom: 1px solid #000; /* Garis bawah input data */
+            border-bottom: 1px solid #000; 
             padding: 2px 5px;
             outline: none;
         }
@@ -75,16 +75,23 @@
             text-transform: uppercase;
         }
         
-        .keterangan-section input[type="text"] {
+        /* STYLE UNTUK INPUT DI KETERANGAN (TEKS & DATE) */
+        .keterangan-section input[type="text"],
+        .keterangan-section input[type="date"] {
             border: none;
             border-bottom: 1px solid #000; 
             padding: 2px 5px;
             display: inline-block;
+            font-family: Arial, sans-serif;
+            font-size: 1em;
+            width: 120px;
         }
+        
+        /* Kotak input kronologi tetap ada saat mengisi */
         textarea {
             width: 100%;
             height: 100px;
-            border: none; 
+            border: 1px solid #ccc; 
             padding: 10px;
             resize: vertical;
             margin-top: 5px;
@@ -130,6 +137,11 @@
             height: 80px;
             border: 1px solid #000; 
             object-fit: contain; 
+        }
+
+        /* CLASS BARU: Untuk menghilangkan border saat export */
+        .no-border-on-export {
+            border: none !important;
         }
 
         
@@ -221,16 +233,15 @@
                                       style="width: 150px;">
             <p>
                 tanggal varian
-                <input type="text" 
-                       placeholder="DD-MM-YYYY" 
-                       id="tanggal_kejadian" 
-                       maxlength="10"
-                       style="width: 120px;"> 
+                <input type="date" 
+                       id="tanggal_kejadian"> 
+                <span id="tanggal_kejadian_print" class="nilai-sales-temp" style="display:none; width: 120px; text-align: center;"></span>
             </p>
             <p>
                 Dengan kronologi sbb :
             </p>
             <textarea placeholder="Tuliskan kronologi kejadian di sini..." id="kronologi"></textarea>
+            <div id="kronologi_print" style="display:none; white-space: pre-wrap; padding: 10px; min-height: 100px; border: none; background: none;"></div>
         </div>
 
         <div class="penutup-section">
@@ -248,7 +259,7 @@
                 <div class="ttd-controls">
                     <button onclick="clearCanvas('signature-personil')">Hapus TTD</button>
                 </div>
-                <p>(Personil toko)</p>
+                <p><span id="personil_ttd_name">(Personil toko)</span></p> 
             </div>
         </div>
 
@@ -284,21 +295,14 @@
 
     <script>
         
-      
         function onlyNumbers(input) {
-            
             input.value = input.value.replace(/[^0-9]/g, '');
         }
 
- 
         function toUppercase(input) {
- 
             input.value = input.value.toUpperCase();
         }
-
-
-
-      
+        
         function formatAngka(input) {
             let angka = input.value.replace(/[^0-9]/g, '');
             let formatted = angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -309,9 +313,7 @@
         const ttdImages = document.querySelectorAll('.ttd-image');
         const controls = document.querySelectorAll('.ttd-controls');
 
-    
         function initSignaturePad(canvas) {
-            
             const ctx = canvas.getContext('2d');
             let isDrawing = false;
             let lastX = 0;
@@ -376,20 +378,23 @@
             const canvas = document.getElementById(canvasId);
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
         }
 
-        
-
         function prepareForExport(state) {
-            // state: 'exporting' atau 'done'
             canvases.forEach((canvas, index) => {
                 const img = ttdImages[index];
                 if (state === 'exporting') {
-                  
                     if (canvas.toDataURL('image/png').length > 1000) { 
                         img.src = canvas.toDataURL('image/png');
                         img.style.display = 'block'; 
                         canvas.style.display = 'none';
+                        // HILANGKAN BORDER TTD saat export
+                        canvas.classList.add('no-border-on-export');
+                        img.classList.add('no-border-on-export');
+                    } else {
+                        // Jika tidak ada TTD, pastikan canvas juga tanpa border
+                        canvas.classList.add('no-border-on-export');
                     }
                     
                     controls.forEach(el => el.classList.add('hide-on-export'));
@@ -401,71 +406,101 @@
                     img.style.display = 'none';
                     controls.forEach(el => el.classList.remove('hide-on-export'));
                     document.querySelector('.actions').classList.remove('hide-on-export');
+                    
+                    // KEMBALIKAN BORDER TTD
+                    canvas.classList.remove('no-border-on-export');
+                    img.classList.remove('no-border-on-export');
                 }
             });
         }
         
-      
-     
         async function sharePDF() {
+            window.scrollTo(0,0);
 
+           
             const nilaiInput = document.getElementById('nilai_sales');
             const nilaiSalesFormatted = nilaiInput.value;
-            const parentParagraph = nilaiInput.closest('p');
+            const parentParagraphNilai = nilaiInput.closest('p');
+            const originalNilaiHTML = parentParagraphNilai ? parentParagraphNilai.innerHTML : null;
             
-            // Simpan HTML asli untuk reset di finally
-            const originalNilaiHTML = parentParagraph ? parentParagraph.innerHTML : null;
-            
-            if (parentParagraph) {
-                 parentParagraph.innerHTML = `senilai : Rp. <span class="nilai-sales-temp">${nilaiSalesFormatted}</span>`;
+            if (parentParagraphNilai) {
+                 parentParagraphNilai.innerHTML = `senilai : Rp. <span class="nilai-sales-temp">${nilaiSalesFormatted}</span>`;
             }
 
+            
+            const tglInput = document.getElementById('tanggal_kejadian');
+            const tglSpan = document.getElementById('tanggal_kejadian_print');
+            let tglFormatted = '';
 
+            if(tglInput.value) {
+                const dateParts = tglInput.value.split('-');
+                if(dateParts.length === 3) {
+                    tglFormatted = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                }
+            }
+            
+            tglSpan.innerText = tglFormatted;
+            tglInput.style.display = 'none';
+            tglSpan.style.display = 'inline-block';
+
+            // 3. Handle Kronologi
+            const kronologiInput = document.getElementById('kronologi');
+            const kronologiPrint = document.getElementById('kronologi_print');
+            
+            kronologiPrint.innerText = kronologiInput.value; 
+            kronologiInput.style.display = 'none'; 
+            kronologiPrint.style.display = 'block'; 
+            
+            
+            const jabatanInput = document.getElementById('jabatan');
+            const ttdLabelSpan = document.getElementById('personil_ttd_name');
+            const originalTtdName = ttdLabelSpan.innerHTML; 
+            
+            if (jabatanInput.value) {
+                // Menggunakan nilai Jabatan (sudah kapital) dan dibungkus kurung
+                ttdLabelSpan.innerText = `(${jabatanInput.value})`;
+            } else {
+                // Tampilkan placeholder jika kosong
+                ttdLabelSpan.innerText = '(................................)';
+            }
+
+           
             prepareForExport('exporting');
             
             const element = document.querySelector('.container');
             
-
+           
             const today = new Date();
             const dd = String(today.getDate()).padStart(2, '0');
             const mm = String(today.getMonth() + 1).padStart(2, '0'); 
             const yyyy = today.getFullYear();
             const dateStr = `${dd}-${mm}-${yyyy}`; 
-            
 
             const kodeToko = document.getElementById('kode_toko').value;
             const safeKodeToko = kodeToko ? kodeToko.replace(/[^a-zA-Z0-9]/g, '_') : 'TANPA_KODE'; 
 
             const filename = `BA_VAR_${safeKodeToko}_${dateStr}.pdf`; 
 
-            // Konfigurasi html2pdf
-            const opt = {
             
+            const opt = {
                 margin: [5, 10, 10, 10], 
                 filename: filename,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 3.0 }, 
+                html2canvas: { scale: 4.0, scrollY: 0 }, 
                 jsPDF: { unit: 'mm', format: [210, 297], orientation: 'portrait' }
             };
 
             try {
-                // Konversi HTML ke Blob PDF
                 const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
                 
-                // Cek dukungan Web Share API
                 if (navigator.canShare && navigator.canShare({ files: [new File([pdfBlob], filename, { type: 'application/pdf' })] })) {
-                    
                     const file = new File([pdfBlob], filename, { type: 'application/pdf' });
-                    
-                    // Panggil dialog berbagi OS
                     await navigator.share({
                         files: [file],
                         title: 'Berita Acara Sales Variance',
                         text: 'Terlampir adalah Berita Acara yang telah ditandatangani secara digital.',
                     });
-                    
                 } else {
-                    // Fallback: Unduh file
                     alert('Browser tidak mendukung fitur berbagi langsung. File akan diunduh.');
                     
                     const url = URL.createObjectURL(pdfBlob);
@@ -481,12 +516,24 @@
                 console.error('Proses Ekspor/Berbagi gagal:', error);
                 alert('Gagal membuat atau berbagi PDF.');
             } finally {
-
-                if (parentParagraph && originalNilaiHTML) {
-                    parentParagraph.innerHTML = originalNilaiHTML;
+                
+                
+                
+                if (parentParagraphNilai && originalNilaiHTML) {
+                    parentParagraphNilai.innerHTML = originalNilaiHTML;
                     document.getElementById('nilai_sales').value = nilaiSalesFormatted;
                 }
+
                 
+                tglInput.style.display = 'inline-block';
+                tglSpan.style.display = 'none';
+                
+              
+                kronologiInput.style.display = 'block';
+                kronologiPrint.style.display = 'none';
+                
+                
+                ttdLabelSpan.innerHTML = originalTtdName;
 
                 prepareForExport('done');
             }
@@ -497,14 +544,12 @@
         function setCreationDate() {
             const dateInput = document.getElementById('tempat_dibuat');
 
-            // Get current date and format as DD-MM-YYYY
             const today = new Date();
             const dd = String(today.getDate()).padStart(2, '0');
             const mm = String(today.getMonth() + 1).padStart(2, '0'); 
             const yyyy = today.getFullYear();
             const formattedDate = `${dd}-${mm}-${yyyy}`;
 
-            // Set the value and make it read-only
             if (dateInput) {
                 dateInput.value = formattedDate;
                 dateInput.readOnly = true;
