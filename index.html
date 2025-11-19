@@ -41,7 +41,7 @@
             padding-right: 20px;
         }
 
-        /* Input Data */
+        
         .data-input {
             margin-bottom: 15px;
             display: flex;
@@ -81,7 +81,7 @@
             text-transform: uppercase;
         }
         
-        /* STYLE UNTUK INPUT DI KETERANGAN (TEKS & DATE) */
+        
         .keterangan-section input[type="text"],
         .keterangan-section input[type="date"] {
             border: none;
@@ -93,7 +93,7 @@
             width: 120px;
         }
         
-        /* Kotak input kronologi tetap ada saat mengisi */
+        
         textarea {
             width: 100%;
             height: 100px;
@@ -105,7 +105,7 @@
             background-color: #f7f7f7; 
         }
 
-        /* Tanda Tangan Layout */
+        
         .tanda-tangan {
             display: flex;
             justify-content: space-between;
@@ -145,7 +145,7 @@
             object-fit: contain; 
         }
 
-        /* CLASS BARU: Untuk menghilangkan border saat export */
+        
         .no-border-on-export {
             border: none !important;
         }
@@ -200,6 +200,58 @@
             display: inline-block;
             padding: 2px 5px;
             border-bottom: 1px solid #000;
+        }
+
+        
+        .image-upload-section {
+            padding-left: 20px;
+            padding-right: 20px;
+            margin-top: 50px; 
+            /* Properti CSS untuk pemisahan halaman saat cetak/pdf */
+            page-break-before: always; 
+        }
+        
+        .image-upload-section h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+        }
+        
+        #image_preview_container {
+            
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 10px; 
+            justify-content: space-between; 
+            margin-top: 20px;
+        }
+        
+        .image-box {
+            
+            width: 32%; 
+            box-sizing: border-box;
+            border: 1px solid #ccc; 
+            padding: 5px;
+            text-align: center;
+            margin-bottom: 10px; /* Jarak antar baris agar ada "lurus kebawah" */
+        }
+        
+        .image-box img {
+            max-width: 100%;
+            height: auto;
+            max-height: 400px; /* Batasan tinggi per gambar agar tetap rapi */
+            display: block;
+            margin: 0 auto;
+        }
+        
+        
+        @media print {
+            .image-upload-section input[type="file"],
+            .image-upload-section p:not(#image_preview_container p) {
+                display: none !important;
+            }
         }
     </style>
 </head>
@@ -295,6 +347,14 @@
             </div>
         </div>
         
+        <div class="image-upload-section">
+            <h2>LAMPIRAN SLIP TUTUPAN</h2>
+            <p>Silakan unggah gambar pendukung di sini (maksimum 3 gambar).</p>
+            <input type="file" id="image_upload" accept="image/*" multiple onchange="previewImages()">
+            
+            <div id="image_preview_container">
+                </div>
+        </div>
         <div class="credit-text">Credit by kopi hitam</div>
 
     </div>
@@ -399,7 +459,7 @@
                         canvas.classList.add('no-border-on-export');
                         img.classList.add('no-border-on-export');
                     } else {
-                        // Jika tidak ada TTD, pastikan canvas juga tanpa border
+                        
                         canvas.classList.add('no-border-on-export');
                     }
                     
@@ -413,13 +473,51 @@
                     controls.forEach(el => el.classList.remove('hide-on-export'));
                     document.querySelector('.actions').classList.remove('hide-on-export');
                     
-                    // KEMBALIKAN BORDER TTD
+                    
                     canvas.classList.remove('no-border-on-export');
                     img.classList.remove('no-border-on-export');
                 }
             });
         }
         
+        
+        function previewImages() {
+            const previewContainer = document.getElementById('image_preview_container');
+            const files = document.getElementById('image_upload').files;
+            
+            
+            if (files.length > 3) {
+                alert('Maksimum 3 gambar yang diizinkan.');
+                document.getElementById('image_upload').value = ''; // Reset input
+                previewContainer.innerHTML = '';
+                return;
+            }
+
+            previewContainer.innerHTML = ''; // Hapus pratinjau sebelumnya
+
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+
+                    reader.onload = function(e) {
+                        const box = document.createElement('div');
+                        box.className = 'image-box';
+                        
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.alt = 'Lampiran Gambar';
+                        
+                        box.appendChild(img);
+                        previewContainer.appendChild(box);
+                    };
+
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        
+
+
         async function sharePDF() {
             window.scrollTo(0,0);
 
@@ -568,7 +666,3 @@
     </script>
 </body>
 </html>
-
-
-
-
