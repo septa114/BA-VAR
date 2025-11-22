@@ -35,13 +35,11 @@
             padding-right: 20px;
         }
         
-     
         .data-input, .keterangan-section, .penutup-section, .tanda-tangan, .credit-text {
             padding-left: 20px;
             padding-right: 20px;
         }
 
-        
         .data-input {
             margin-bottom: 15px;
             display: flex;
@@ -64,23 +62,19 @@
             width: 80px;
         }
 
-        /* Keterangan */
         .keterangan-section {
             margin-top: 20px;
             line-height: 1.5;
         }
         
- 
         #nilai_sales, #tanggal_kejadian {
             font-size: 1.1em; 
             font-weight: bold; 
         }
         
-      
         #nama_personil, #jabatan, #kode_toko {
             text-transform: uppercase;
         }
-        
         
         .keterangan-section input[type="text"],
         .keterangan-section input[type="date"] {
@@ -93,7 +87,6 @@
             width: 120px;
         }
         
-        
         textarea {
             width: 100%;
             height: 100px;
@@ -105,7 +98,6 @@
             background-color: #f7f7f7; 
         }
 
-        
         .tanda-tangan {
             display: flex;
             justify-content: space-between;
@@ -129,7 +121,6 @@
             font-size: 0.8em;
         }
 
-       
         .ttd-area {
             height: 80px;
             border: 1px solid #000; 
@@ -145,12 +136,10 @@
             object-fit: contain; 
         }
 
-        
         .no-border-on-export {
             border: none !important;
         }
 
-        
         .ttd-line {
             height: 80px;
             border-bottom: 1px solid #000; 
@@ -162,7 +151,6 @@
             font-weight: bold;
         }
 
-        /* Tombol Aksi */
         .actions {
             position: fixed;
             top: 10px;
@@ -181,7 +169,6 @@
             color: white;
         }
         
-        /* Credit Text */
         .credit-text {
             text-align: right;
             margin-top: 50px;
@@ -193,7 +180,6 @@
             display: none !important;
         }
         
-       
         .nilai-sales-temp {
             font-size: 1.1em;
             font-weight: bold;
@@ -202,12 +188,10 @@
             border-bottom: 1px solid #000;
         }
 
-        
         .image-upload-section {
             padding-left: 20px;
             padding-right: 20px;
             margin-top: 50px; 
-            /* Properti CSS untuk pemisahan halaman saat cetak/pdf */
             page-break-before: always; 
         }
         
@@ -220,32 +204,33 @@
         }
         
         #image_preview_container {
-            
             display: flex; 
-            flex-wrap: wrap; 
+            flex-wrap: nowrap; 
             gap: 10px; 
             justify-content: space-between; 
             margin-top: 20px;
+            width: 100%;
         }
         
+        
         .image-box {
-            
             width: 32%; 
+            height: 400px; 
             box-sizing: border-box;
             border: 1px solid #ccc; 
             padding: 5px;
-            text-align: center;
-            margin-bottom: 10px; /* Jarak antar baris agar ada "lurus kebawah" */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #fafafa; 
         }
         
         .image-box img {
-            max-width: 100%;
-            height: auto;
-            max-height: 400px; /* Batasan tinggi per gambar agar tetap rapi */
+            width: 100%;
+            height: 100%;
+            object-fit: contain; 
             display: block;
-            margin: 0 auto;
         }
-        
         
         @media print {
             .image-upload-section input[type="file"],
@@ -349,7 +334,7 @@
         
         <div class="image-upload-section">
             <h2>LAMPIRAN SLIP TUTUPAN</h2>
-            <p>Silakan unggah gambar pendukung di sini (maksimum 3 gambar).</p>
+            <p id="upload_instruction">Silakan unggah gambar pendukung di sini (maksimum 3 gambar).</p>
             <input type="file" id="image_upload" accept="image/*" multiple onchange="previewImages()">
             
             <div id="image_preview_container">
@@ -455,11 +440,9 @@
                         img.src = canvas.toDataURL('image/png');
                         img.style.display = 'block'; 
                         canvas.style.display = 'none';
-                        // HILANGKAN BORDER TTD saat export
                         canvas.classList.add('no-border-on-export');
                         img.classList.add('no-border-on-export');
                     } else {
-                        
                         canvas.classList.add('no-border-on-export');
                     }
                     
@@ -467,33 +450,28 @@
                     document.querySelector('.actions').classList.add('hide-on-export');
 
                 } else if (state === 'done') {
-                    
                     canvas.style.display = 'block';
                     img.style.display = 'none';
                     controls.forEach(el => el.classList.remove('hide-on-export'));
                     document.querySelector('.actions').classList.remove('hide-on-export');
-                    
-                    
                     canvas.classList.remove('no-border-on-export');
                     img.classList.remove('no-border-on-export');
                 }
             });
         }
         
-        
         function previewImages() {
             const previewContainer = document.getElementById('image_preview_container');
             const files = document.getElementById('image_upload').files;
             
-            
             if (files.length > 3) {
                 alert('Maksimum 3 gambar yang diizinkan.');
-                document.getElementById('image_upload').value = ''; // Reset input
+                document.getElementById('image_upload').value = ''; 
                 previewContainer.innerHTML = '';
                 return;
             }
 
-            previewContainer.innerHTML = ''; // Hapus pratinjau sebelumnya
+            previewContainer.innerHTML = ''; 
 
             Array.from(files).forEach(file => {
                 if (file.type.startsWith('image/')) {
@@ -517,11 +495,17 @@
         }
         
 
-
         async function sharePDF() {
             window.scrollTo(0,0);
 
-           
+            const fileInput = document.getElementById('image_upload');
+            const instructionText = document.getElementById('upload_instruction');
+            
+
+            fileInput.style.display = 'none';
+            if(instructionText) instructionText.style.display = 'none';
+            //Septa Ganteng
+
             const nilaiInput = document.getElementById('nilai_sales');
             const nilaiSalesFormatted = nilaiInput.value;
             const parentParagraphNilai = nilaiInput.closest('p');
@@ -531,7 +515,6 @@
                  parentParagraphNilai.innerHTML = `senilai : Rp. <span class="nilai-sales-temp">${nilaiSalesFormatted}</span>`;
             }
 
-            
             const tglInput = document.getElementById('tanggal_kejadian');
             const tglSpan = document.getElementById('tanggal_kejadian_print');
             let tglFormatted = '';
@@ -547,7 +530,6 @@
             tglInput.style.display = 'none';
             tglSpan.style.display = 'inline-block';
 
-            // 3. Handle Kronologi
             const kronologiInput = document.getElementById('kronologi');
             const kronologiPrint = document.getElementById('kronologi_print');
             
@@ -555,25 +537,20 @@
             kronologiInput.style.display = 'none'; 
             kronologiPrint.style.display = 'block'; 
             
-            
             const jabatanInput = document.getElementById('jabatan');
             const ttdLabelSpan = document.getElementById('personil_ttd_name');
             const originalTtdName = ttdLabelSpan.innerHTML; 
             
             if (jabatanInput.value) {
-                // Menggunakan nilai Jabatan (sudah kapital) dan dibungkus kurung
                 ttdLabelSpan.innerText = `(${jabatanInput.value})`;
             } else {
-                // Tampilkan placeholder jika kosong
                 ttdLabelSpan.innerText = '(................................)';
             }
 
-           
             prepareForExport('exporting');
             
             const element = document.querySelector('.container');
             
-           
             const today = new Date();
             const dd = String(today.getDate()).padStart(2, '0');
             const mm = String(today.getMonth() + 1).padStart(2, '0'); 
@@ -585,7 +562,6 @@
 
             const filename = `BA_VAR_${safeKodeToko}_${dateStr}.pdf`; 
 
-            
             const opt = {
                 margin: [5, 10, 10, 10], 
                 filename: filename,
@@ -621,30 +597,27 @@
                 alert('Gagal membuat atau berbagi PDF.');
             } finally {
                 
-                
+                fileInput.style.display = 'block';
+                if(instructionText) instructionText.style.display = 'block';
+                // --------------------------------------
                 
                 if (parentParagraphNilai && originalNilaiHTML) {
                     parentParagraphNilai.innerHTML = originalNilaiHTML;
                     document.getElementById('nilai_sales').value = nilaiSalesFormatted;
                 }
 
-                
                 tglInput.style.display = 'inline-block';
                 tglSpan.style.display = 'none';
                 
-              
                 kronologiInput.style.display = 'block';
                 kronologiPrint.style.display = 'none';
-                
                 
                 ttdLabelSpan.innerHTML = originalTtdName;
 
                 prepareForExport('done');
             }
         }
-        
       
-
         function setCreationDate() {
             const dateInput = document.getElementById('tempat_dibuat');
 
@@ -660,10 +633,8 @@
             }
         }
 
-        
         setCreationDate();
         
     </script>
 </body>
 </html>
-
